@@ -4,9 +4,11 @@ import sys
 import requests
 from bot import Bot
 from db import DataBase
+from OpenRoute import OpenRouteService
 import json
 
-#Inizializzazione bot e db
+#Inizializzazione bot , ob e or
+ors = OpenRouteService("6949498361:AAGdysoT7C9uMgWlwxlS-FcgSJwXKQwQeNw")
 bot = Bot("6949498361:AAGdysoT7C9uMgWlwxlS-FcgSJwXKQwQeNw")
 db = DataBase("localhost", "root", "", "db_benzinai")
 #Variabili utili
@@ -160,8 +162,11 @@ def ricercaBenzinaio():
     latitudine_utente,longitudine_utente = estraiLatLong(dati_utente[5])        
     punto = (latitudine_utente, longitudine_utente)
     
-    #Vedo quale benzinaio è entro il raggio desiderato
-    benzinai_entro_raggio = benzinaioEntroRaggio(benzinai_dati, punto, float(dati_utente[4]))
+    #Vedo quale benzinaio è entro il raggio desiderato (brutto)
+    #benzinai_entro_raggio = benzinaioEntroRaggio(benzinai_dati, punto, float(dati_utente[4]))
+
+    #Usando OpenRouteService
+    benzinai_entro_raggio = benzinaioOpenRoute(benzinai_dati, punto, float(dati_utente[4]))
     
     # Stampa i benzinaio entro il raggio
     for benzinaio in benzinai_entro_raggio:
@@ -206,6 +211,22 @@ def haversine(lat1, lon1, lat2, lon2):
 
     distance = R * c
     return distance
+
+def benzinaioOpenRoute(benzinai, punto, raggio):
+
+    benzinaio_entro_raggio = []
+
+    for benzinaio in benzinai:
+        
+        distanza = ors.get_route_distance((punto[0],punto[1]),(benzinaio[1],benzinaio[2]))
+        
+        print(distanza)
+
+        if distanza <= raggio:
+            print(benzinaio[0], "è entro il raggio")
+            benzinaio_entro_raggio.append(benzinaio)
+
+    return benzinaio_entro_raggio
 
 def benzinaioEntroRaggio(benzinai, punto, raggio):
     #Vettore dove sono tutti i benzinaio entro il raggio
